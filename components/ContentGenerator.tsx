@@ -63,35 +63,6 @@ export default function ContentGenerator() {
             <SelectItem value="youtube">YouTube</SelectItem>
           </SelectContent>
         </Select>
-        <div className="flex space-x-4">
-          <label className="flex items-center space-x-2">
-            <Checkbox
-              checked={options.image}
-              onCheckedChange={(checked) =>
-                setOptions({ ...options, image: checked as boolean })
-              }
-            />
-            <span>Image</span>
-          </label>
-          <label className="flex items-center space-x-2">
-            <Checkbox
-              checked={options.video}
-              onCheckedChange={(checked) =>
-                setOptions({ ...options, video: checked as boolean })
-              }
-            />
-            <span>Video</span>
-          </label>
-          <label className="flex items-center space-x-2">
-            <Checkbox
-              checked={options.meme}
-              onCheckedChange={(checked) =>
-                setOptions({ ...options, meme: checked as boolean })
-              }
-            />
-            <span>Meme</span>
-          </label>
-        </div>
         <Button type="submit" disabled={loading}>
           {loading ? "Generating..." : "Generate Content"}
         </Button>
