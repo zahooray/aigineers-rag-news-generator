@@ -4,10 +4,9 @@ import axios from "axios";
 import { JSDOM } from "jsdom";
 import { Readability } from "@mozilla/readability";
 
-const NEWS_API_KEY = "b99be3237625496792e1f951bd03b6aa";
-const GROQ_API_KEY = "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";
-const TOGETHER_API_KEY =
-  "27b92a686e62fa3c74cb22729a1d0bc26e377cb64ac39d3694355f4c5a1b804f";
+const NEWS_API_KEY = process.env.NEWS_API_KEY;
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
+const TOGETHER_API_KEY = process.env.TOGETHER_API_KEY;
 
 async function fetchNewsArticles(topic: string, numArticles: number = 3) {
   const url = `https://newsapi.org/v2/everything?q=${topic}&apiKey=${NEWS_API_KEY}&pageSize=${numArticles}`;
@@ -32,6 +31,10 @@ async function scrapeArticle(url: string): Promise<string> {
 }
 
 async function generateSummaryWithGroq(content: string): Promise<string> {
+  // Using Llama 3.3 70B for high-quality summarization
+  // - 128k token context window for long articles
+  // - Production-ready model (stable and reliable)
+  // - Better comprehension and summarization quality than 8B models
   const messages = [
     {
       role: "user",
@@ -39,21 +42,31 @@ async function generateSummaryWithGroq(content: string): Promise<string> {
     },
   ];
 
-  const response = await axios.post(
-    "https://api.groq.com/openai/v1/chat/completions",
-    {
-      model: "llama3-8b-8192",
-      messages,
-    },
-    {
-      headers: {
-        Authorization: `Bearer ${GROQ_API_KEY}`,
-        "Content-Type": "application/json",
+  try {
+    const response = await axios.post(
+      "https://api.groq.com/openai/v1/chat/completions",
+      {
+        model: "llama-3.3-70b-versatile",
+        messages,
+        temperature: 0.5,
+        max_tokens: 1024,
       },
-    }
-  );
+      {
+        headers: {
+          Authorization: `Bearer ${GROQ_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
-  return response.data.choices[0].message.content;
+    return response.data.choices[0].message.content;
+  } catch (error: any) {
+    console.error("Groq API Error Details:");
+    console.error("Status:", error.response?.status);
+    console.error("Error Data:", JSON.stringify(error.response?.data, null, 2));
+    console.error("Request Data:", JSON.stringify({ model: "llama-3.3-70b-versatile", messages }, null, 2));
+    throw error;
+  }
 }
 
 async function generateTextPost(
@@ -80,56 +93,67 @@ async function generateTextPost(
 
   Here are the articles for the post on the topic of ${topic}. Write the post while keeping these articles in mind also add a title for the post as well: ${formattedArticles}`;
 
-  const response = await axios.post(
-    "https://api.together.xyz/v1/chat/completions",
-    {
-      model: "meta-llama/Llama-3.3-70B-Instruct-Turbo",
-      messages: [{ role: "user", content: command }],
-      max_tokens: 700,
-      temperature: 0.7,
-      top_p: 0.7,
-      top_k: 50,
-      repetition_penalty: 1,
-      stop: ["<|eot_id|>", "<|eom_id|>"],
-    },
-    {
-      headers: {
-        Authorization: `Bearer ${TOGETHER_API_KEY}`,
-        "Content-Type": "application/json",
+  try {
+    const response = await axios.post(
+      "https://api.groq.com/openai/v1/chat/completions",
+      {
+        model: "llama-3.3-70b-versatile",
+        messages: [{ role: "user", content: command }],
+        max_tokens: 1500,
+        temperature: 0.7,
       },
-    }
-  );
+      {
+        headers: {
+          Authorization: `Bearer ${GROQ_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
-  return response.data.choices[0].message.content;
+    return response.data.choices[0].message.content;
+  } catch (error: any) {
+    console.error("Groq API Error (Text Post Generation):");
+    console.error("Status:", error.response?.status);
+    console.error("Error Data:", JSON.stringify(error.response?.data, null, 2));
+    throw error;
+  }
 }
 
 async function generateImage(
   postContent: string,
   platform: string,
   topic: string
-): Promise<string> {
+): Promise<string | null> {
   const prompt = `I need a highly realistic, detailed, and professional-quality image for a post on the platform ${platform}. The topic of the post is ${topic}, and its content focuses on ${postContent}. The image should be visually compelling, unique, and perfectly tailored to align with the post's theme, subject matter, and intended tone. It should resonate with the audience of the platform, enhancing the post's message while maintaining an authentic and realistic aesthetic. The image must directly reflect the essence of the topic and content, ensuring relevance and emotional impact.`;
 
-  const response = await axios.post(
-    "https://api.together.xyz/v1/images/generations",
-    {
-      prompt,
-      model: "black-forest-labs/FLUX.1-dev",
-      width: 1024,
-      height: 768,
-      steps: 28,
-      n: 1,
-      response_format: "b64_json",
-    },
-    {
-      headers: {
-        Authorization: `Bearer ${TOGETHER_API_KEY}`,
-        "Content-Type": "application/json",
+  try {
+    const response = await axios.post(
+      "https://api.together.xyz/v1/images/generations",
+      {
+        prompt,
+        model: "black-forest-labs/FLUX.1-dev",
+        width: 1024,
+        height: 768,
+        steps: 28,
+        n: 1,
+        response_format: "b64_json",
       },
-    }
-  );
+      {
+        headers: {
+          Authorization: `Bearer ${TOGETHER_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
-  return response.data.data[0].b64_json;
+    return response.data.data[0].b64_json;
+  } catch (error: any) {
+    console.error("Together.xyz Image Generation Error:");
+    console.error("Status:", error.response?.status);
+    console.error("Error:", error.response?.data || error.message);
+    console.warn("Image generation failed - continuing without image");
+    return null;
+  }
 }
 
 export async function POST(request: Request) {
@@ -150,7 +174,9 @@ export async function POST(request: Request) {
 
     if (options.image) {
       const imageBase64 = await generateImage(textPost, platform, topic);
-      imageUrl = `data:image/png;base64,${imageBase64}`;
+      if (imageBase64) {
+        imageUrl = `data:image/png;base64,${imageBase64}`;
+      }
     }
 
     return NextResponse.json({ textPost, imageUrl });

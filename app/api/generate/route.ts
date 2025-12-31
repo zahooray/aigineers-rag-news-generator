@@ -2,14 +2,14 @@
 import { NextResponse } from "next/server";
 import axios from "axios";
 
-const NEWS_API_KEY = process.env.NEWS_API_KEY;
+const NEWS_THING = process.env.NEWS_THING;
 const HUGGING_FACE_API_KEY = process.env.HUGGING_FACE_API_KEY;
 
 async function fetchNews(query: string, pageSize: number = 3) {
   const url = "https://newsapi.org/v2/everything";
   const params = {
     q: query,
-    apiKey: NEWS_API_KEY,
+    apiKey: NEWS_THING,
     language: "en",
     pageSize,
   };

@@ -38,7 +38,7 @@ RAG News Generator is an AI-powered content creation tool that uses Retrieval-Au
 
    ```
    NEXT_PUBLIC_RAG_API_URL=your_api_url_here
-   NEWS_API_KEY=your_news_api_key_here
+   NEWS_THING=your_NEWS_THING_here
    HUGGING_FACE_API_KEY=your_hugging_face_api_key_here
    ```
 
@@ -63,7 +63,7 @@ RAG News Generator is an AI-powered content creation tool that uses Retrieval-Au
 ## Environment Variables
 
 - `NEXT_PUBLIC_RAG_API_URL`: The URL of your RAG API endpoint.
-- `NEWS_API_KEY`: Your NewsAPI key (sign up at https://newsapi.org/)
+- `NEWS_THING`: Your NewsAPI key (sign up at https://newsapi.org/)
 - `HUGGING_FACE_API_KEY`: Your Hugging Face API key (sign up at https://huggingface.co/)
 
 ## How It Works
